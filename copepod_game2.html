@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Zooplankton: catch prey like a copepod!</title>
+  <style>
+    canvas { display: block; margin: 0 auto; background: #e0f7fa; }
+    #info { text-align: center; font-family: Arial, sans-serif; margin: 10px; }
+    button { margin: 5px; padding: 10px 20px; }
+    #message { font-weight: bold; color: green; margin-top: 10px; font-size: 22px; }
+    #explanation { max-width: 600px; margin: 10px auto; text-align: left; font-size: 24px; font-weight: bold; }
+    #gameplay-instructions { font-size: 20px; font-weight: bold; color: #333; }
+    #legend {position: absolute; max-width: 200px; margin: 10px auto; font-size: 16px; background: #f0f0f0; padding: 10px; border: 1px solid #ccc; text-align: left; }
+  </style>
+</head>
+<body>
+  <div id="info">
+    <h2>Zooplankton: catch prey like a copepod!</h2>
+    <p id="gameplay-instructions">Use the arrow keys on your keyboard to catch as many prey as you can!</p>
+    <p>Use arrow keys to move. Catch dinoflagellates, avoid sand!</p>
+    <button onclick="startLevel(1)">Start Level 1: Normal</button>
+    <button onclick="startLevel(2)">Start Level 2: Turbulence</button>
+    <button onclick="startLevel(3)">Start Level 3: Turbidity</button>
+    <button onclick="startLevel(4)">Start Level 4: Turbulence + Turbidity</button>
+    <p id="score">Score: 0</p>
+    <p id="message"></p>
+  </div>
+  <div id="explanation"></div>
+  <div id="legend">
+    <strong>Legend:</strong>
+    <ul>
+      <li><span style="color: rgb(0, 100, 200);">●</span> Copepod</li>
+      <li><span style="color: rgb(255, 200, 0);">⎯</span> Dinoflagellate (prey, with flagellum)</li>
+      <li><span style="color: rgb(194, 178, 128);">●</span> Sand particle</li>
+      <li><span style="color: rgb(50, 50, 50);">▬</span> Fecal pellet (prey)</li>
+      <li><span style="color: rgb(120, 120, 120);">▬</span> Mixed fecal pellet</li>
+    </ul>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+  <script>
+    let copepod;
+    let prey = [];
+    let sandParticles = [];
+    let fecalPellets = [];
+    let score = 0;
+    let level = 1;
+    let turbidity = false;
+    let capturedThisCycle = [];
+    let feedingCooldown = 0;
+
+    function setup() {
+      createCanvas(600, 400);
+      copepod = new Copepod();
+      resetEntities();
+    }
+
+    function draw() {
+      background(224, 247, 250);
+      if (feedingCooldown > 0) feedingCooldown--;
+
+      for (let pellet of fecalPellets) {
+        pellet.show();
+      }
+
+      if ((level === 3 || level === 4) && turbidity) {
+        for (let s of sandParticles) {
+          s.move();
+          s.show();
+          if (copepod.catches(s)) {
+            score--;
+            updateScore();
+            s.reset();
+            capturedThisCycle.push("sand");
+            feedingCooldown = 100;
+            schedulePellet();
+          }
+        }
+      }
+
+      copepod.move();
+      copepod.show();
+
+      for (let p of prey) {
+        p.move();
+        p.show();
+        if (copepod.catches(p) && feedingCooldown <= 0) {
+          score++;
+          updateScore();
+          p.reset();
+          capturedThisCycle.push("prey");
+          schedulePellet();
+        }
+      }
+
+      fecalPellets = fecalPellets.filter(p => millis() - p.timestamp < 5000);
+    }
+
+    function updateScore() {
+      document.getElementById("score").innerText = "Score: " + score;
+      if (score >= 10) {
+        let msg = document.getElementById("message");
+        msg.innerText = "Congratulations on being an efficient copepod! You contribute to a healthy North Sea ecosystem that is well-balanced!";
+        msg.style.display = "block";
+        setTimeout(() => {
+          msg.innerText = "";
+          startLevel(level + 1);
+        }, 10000);
+      }
+    }
+
+    function schedulePellet() {
+      setTimeout(() => {
+        let x = copepod.x;
+        let y = copepod.y;
+        let type = "mixed";
+        if (capturedThisCycle.length === 1) type = capturedThisCycle[0];
+        fecalPellets.push(new Pellet(x, y, type));
+        capturedThisCycle = [];
+      }, 3000);
+    }
+
+    function keyPressed() {
+      if (keyCode === LEFT_ARROW) copepod.setDir(-1, 0);
+      else if (keyCode === RIGHT_ARROW) copepod.setDir(1, 0);
+      else if (keyCode === UP_ARROW) copepod.setDir(0, -1);
+      else if (keyCode === DOWN_ARROW) copepod.setDir(0, 1);
+    }
+
+    function keyReleased() {
+      copepod.setDir(0, 0);
+    }
+
+    function startLevel(lv) {
+      level = lv;
+      score = 0;
+      updateScore();
+      turbidity = (lv === 3 || lv === 4);
+      resetEntities();
+
+      const explanation = document.getElementById("explanation");
+      if (lv === 1) {
+        explanation.innerText = "As you can see, is it quite easy to catch prey in these conditions! The more we eat, the more we can reproduce, grow and produce fecal pellets! These fecal pellets often sink to the bottom of the seafloor and provide food for benthic organisms, or fecal pellets end up burried in the seafloor, storing carbon and helping in reducing Carbon Dioxide levels in the atmosphere";
+      } else if (lv === 2) {
+        explanation.innerText = "With turbulence increasing, the chances of encountering prey increases, so you can easily eat more! However, when turbulence is too high; a copepod's feeding current is eroded, and/or their ability to detect prey is significantly decreased.";
+      } else if (lv === 3) {
+        explanation.innerText = "When turbidity is present, copepods accidentally ingest sand particles, which takes up room in their guts, decreasing their ability to feed on prey and reducing the carbon content of fecal pellets.";
+      } else if (lv === 4) {
+        explanation.innerText = "With high turbulence and turbidity, a copepod struggles to select prey, and ingests more and more sand particles, taking up valuable space in the gut, further reducing fecal pellet carbon content.";
+      }
+    }
+
+    function resetEntities() {
+      prey = [];
+      sandParticles = [];
+      fecalPellets = [];
+      let preyCount = 8;
+      let preySpeed = (level === 2 || level === 4) ? 7.5 : 1.5;
+      for (let i = 0; i < preyCount; i++) prey.push(new Prey(preySpeed));
+      if (turbidity) {
+        let sandSpeed = (level === 4) ? 7.5 : 1.5;
+        for (let i = 0; i < preyCount * 20; i++) {
+          sandParticles.push(new Sand(sandSpeed));
+        }
+      }
+    }
+
+    class Copepod {
+      constructor() {
+        this.x = width / 2;
+        this.y = height / 2;
+        this.speed = 3;
+        this.xdir = 0;
+        this.ydir = 0;
+        this.size = 30;
+      }
+      move() {
+        this.x += this.xdir * this.speed;
+        this.y += this.ydir * this.speed;
+        this.x = constrain(this.x, 0, width);
+        this.y = constrain(this.y, 0, height);
+      }
+      setDir(x, y) {
+        this.xdir = x;
+        this.ydir = y;
+      }
+      show() {
+        push();
+        translate(this.x, this.y);
+        fill(0, 100, 200);
+        ellipse(0, 0, this.size, this.size * 0.6);
+        stroke(0, 100, 200);
+        line(-10, 10, -15, 20);
+        line(10, 10, 15, 20);
+        pop();
+      }
+      catches(obj) {
+        let d = dist(this.x, this.y, obj.x, obj.y);
+        return d < (this.size + obj.size) / 2;
+      }
+    }
+
+    class Prey {
+      constructor(speed = 1.5) {
+        this.size = 15;
+        this.speed = speed;
+        this.reset();
+      }
+      reset() {
+        this.x = random(width);
+        this.y = random(height);
+        this.setVelocity();
+      }
+      setVelocity() {
+        this.vx = random(-this.speed, this.speed);
+        this.vy = random(-this.speed, this.speed);
+      }
+      move() {
+        this.x += this.vx;
+        this.y += this.vy;
+        if (this.x < 0 || this.x > width) this.vx *= -1;
+        if (this.y < 0 || this.y > height) this.vy *= -1;
+      }
+      show() {
+        push();
+        translate(this.x, this.y);
+        fill(255, 200, 0);
+        ellipse(0, 0, this.size, this.size / 2);
+        stroke(255, 200, 0);
+        line(this.size / 2, 0, this.size, 0);  // Flagellum
+        pop();
+      }
+    }
+
+    class Sand {
+      constructor(speed = 1) {
+        this.size = 10;
+        this.speed = speed;
+        this.reset();
+      }
+      reset() {
+        this.x = random(width);
+        this.y = random(height);
+        this.vx = random(-this.speed, this.speed);
+        this.vy = random(-this.speed, this.speed);
+      }
+      move() {
+        this.x += this.vx;
+        this.y += this.vy;
+        if (this.x < 0 || this.x > width) this.vx *= -1;
+        if (this.y < 0 || this.y > height) this.vy *= -1;
+      }
+      show() {
+        fill(194, 178, 128);
+        ellipse(this.x, this.y, this.size);
+      }
+    }
+
+    class Pellet {
+      constructor(x, y, type) {
+        this.x = x;
+        this.y = y;
+        this.type = type;
+        this.size = 10;
+        this.timestamp = millis();
+      }
+      show() {
+        push();
+        translate(this.x, this.y);
+        if (this.type === "prey") fill(50);
+        else if (this.type === "sand") fill(194, 178, 128);
+        else fill(120);
+        ellipse(0, 0, this.size * 2, this.size / 2);
+        pop();
+      }
+    }
+  </script>
+</body>
+</html>
