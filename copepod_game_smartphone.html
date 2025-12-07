@@ -21,6 +21,17 @@
       max-width: 600px;
     }
 
+    /* Container around canvas + overlay controls */
+    #game-container {
+      position: relative;          /* so arrows can be absolutely positioned inside */
+      display: inline-block;
+      margin-bottom: 10px;
+    }
+
+    #canvas-wrapper {
+      display: inline-block;
+    }
+
     canvas {
       display: block;
       background: #e0f7fa;
@@ -55,25 +66,28 @@
       color: #333;
     }
 
-    /* Game + controls container – centred */
-    #game-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-
-    /* Arrow buttons below the game */
+    /* Arrow controls OVER the canvas, bottom-centre */
     #touch-controls {
-      margin-top: 8px;
+      position: absolute;
+      left: 50%;
+      bottom: 8px;
+      transform: translateX(-50%);
       text-align: center;
+      z-index: 2;
+      /* slight translucent background so they are visible but not too intrusive */
+      background: rgba(255, 255, 255, 0.4);
+      border-radius: 12px;
+      padding: 4px;
     }
 
     #touch-controls button {
-      width: 60px;
-      height: 60px;
-      font-size: 24px;
-      margin: 4px;
+      width: 52px;
+      height: 52px;
+      font-size: 22px;
+      margin: 3px;
+      border-radius: 8px;
+      border: 1px solid #444;
+      background: rgba(255, 255, 255, 0.9);
     }
   </style>
 </head>
@@ -91,7 +105,7 @@
     <p id="message"></p>
   </div>
 
-  <!-- GAME + ARROW BUTTONS, CENTRED -->
+  <!-- GAME + OVERLAY ARROWS, CENTRED -->
   <div id="game-container">
     <div id="canvas-wrapper"></div>
 
@@ -399,7 +413,7 @@
       }
     }
 
-    // On-screen arrow buttons
+    // On-screen arrow buttons overlaying the canvas
     function setupTouchControls() {
       const up = document.getElementById("btn-up");
       const down = document.getElementById("btn-down");
@@ -416,14 +430,14 @@
       function startRight() { ensureTimerStarted(); copepod.setDir(1,  0); }
       function stopMove()   { copepod.setDir(0,  0); }
 
-      // Mouse (desktop)
+      // Mouse
       up.addEventListener("mousedown", (e) => { e.preventDefault(); startUp(); });
       down.addEventListener("mousedown", (e) => { e.preventDefault(); startDown(); });
       left.addEventListener("mousedown", (e) => { e.preventDefault(); startLeft(); });
       right.addEventListener("mousedown", (e) => { e.preventDefault(); startRight(); });
       document.addEventListener("mouseup", (e) => { e.preventDefault(); stopMove(); });
 
-      // Touch (phone)
+      // Touch
       up.addEventListener("touchstart", (e) => { e.preventDefault(); startUp(); });
       down.addEventListener("touchstart", (e) => { e.preventDefault(); startDown(); });
       left.addEventListener("touchstart", (e) => { e.preventDefault(); startLeft(); });
@@ -439,5 +453,4 @@
   </script>
 </body>
 </html>
-
 
