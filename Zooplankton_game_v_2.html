@@ -9,13 +9,7 @@
       --surface-h: 12vh;
       --surface-line: calc(var(--surface-h) - 12px);
 
-      /* =========================================================
-         SPRITE SIZE KNOBS (EDIT THESE)
-         - Game sprites:
-           * copepod, prey, poop, crab are used in gameplay.
-         - Overlay/boxes:
-           * legend icons and the "big copepod" above the sufficient box.
-         ========================================================= */
+   
       --size-copepod: 26vmin;
       --size-prey:     5vmin;
       --size-poop:    10vmin;
@@ -26,7 +20,7 @@
       --size-legend-poop:    44px;
       --size-legend-crab:    44px;
 
-      --size-sufficient-copepod: 220px; /* big copepod above "You are eating just fine!" */
+      --size-sufficient-copepod: 220px; 
 
       /* Scheme (SVG) icon sizes inside the feces box */
       --size-scheme-copepod: 50; /* px (number) */
@@ -315,7 +309,7 @@
     .hud b{ font-weight: 700; }
     .hud .row{ display:flex; gap: 10px; flex-wrap: wrap; }
 
-    /* ---------- Sprites (SIZES NOW VIA CSS VARS) ---------- */
+    /* ---------- Sprites  ---------- */
     #copepod{
       position: absolute;
       width: var(--size-copepod);
@@ -433,7 +427,7 @@
       transition: opacity 300ms ease;
     }
 
-    /* ---------- slurf (procedural) ---------- */
+    /* ---------- slurf ---------- */
     #slurf{
       position: absolute;
       left: 0;
