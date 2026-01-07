@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
 
   <style>
     :root{
@@ -11,6 +11,10 @@
 
       /* =========================================================
          SPRITE SIZE KNOBS (EDIT THESE)
+         - Game sprites:
+           * copepod, prey, poop, crab are used in gameplay.
+         - Overlay/boxes:
+           * legend icons and the "big copepod" above the sufficient box.
          ========================================================= */
       --size-copepod: 26vmin;
       --size-prey:     5vmin;
@@ -22,7 +26,7 @@
       --size-legend-poop:    44px;
       --size-legend-crab:    44px;
 
-      --size-sufficient-copepod: 220px;
+      --size-sufficient-copepod: 220px; /* big copepod above "You are eating just fine!" */
 
       /* Scheme (SVG) icon sizes inside the feces box */
       --size-scheme-copepod: 50; /* px (number) */
@@ -32,6 +36,13 @@
     }
 
     html, body { height: 100%; margin: 0; overflow: hidden; }
+
+    /* Mobile: prevent scrolling/gesture interference */
+    html, body{
+      overscroll-behavior: none;
+      touch-action: none;
+    }
+
     body{
       position: relative;
       background:
@@ -47,13 +58,6 @@
           #1c7fcd 40%,
           #073a77 64%,
           #02112d 100%);
-      /* iOS safe area */
-      padding:
-        env(safe-area-inset-top, 0px)
-        env(safe-area-inset-right, 0px)
-        env(safe-area-inset-bottom, 0px)
-        env(safe-area-inset-left, 0px);
-      overscroll-behavior: none;
     }
 
     /* ---------- Sea surface ---------- */
@@ -318,7 +322,7 @@
     .hud b{ font-weight: 700; }
     .hud .row{ display:flex; gap: 10px; flex-wrap: wrap; }
 
-    /* ---------- Sprites ---------- */
+    /* ---------- Sprites (SIZES NOW VIA CSS VARS) ---------- */
     #copepod{
       position: absolute;
       width: var(--size-copepod);
@@ -436,7 +440,7 @@
       transition: opacity 300ms ease;
     }
 
-    /* ---------- slurf ---------- */
+    /* ---------- slurf (procedural) ---------- */
     #slurf{
       position: absolute;
       left: 0;
@@ -562,6 +566,7 @@
       background: rgba(0,0,0,0.18);
       border: 1px solid rgba(255,255,255,0.10);
     }
+    /* Per-item sizing via CSS vars */
     .legend-item img{ height: auto; filter: drop-shadow(0 10px 18px rgba(0,0,0,0.25)); }
     .legend-item img.icon-poop{ width: var(--size-legend-poop); }
     .legend-item img.icon-prey{ width: var(--size-legend-prey); }
@@ -629,6 +634,7 @@
         rgba(0,0,0,0.48) 100%);
     }
 
+    /* ---------- ORELSE block inside overlay card ---------- */
     .orelse{
       display: grid;
       gap: 10px;
@@ -662,6 +668,7 @@
       word-break: break-word;
     }
 
+    /* ---------- Intro buttons (play vs read) ---------- */
     .btnRow{
       display:flex;
       gap: 10px;
@@ -681,10 +688,12 @@
       cursor: pointer;
       backdrop-filter: blur(6px);
       transition: transform 120ms ease, background 120ms ease;
+      touch-action: manipulation;
     }
     .btn:hover{ transform: translateY(-1px); background: rgba(0,0,0,0.33); }
     .btn:active{ transform: translateY(0px); }
 
+    /* ---------- Large “outside” copepod for overlaySufficient ---------- */
     #sufficientCopepod{
       position: fixed;
       z-index: 101;
@@ -702,28 +711,20 @@
       50%     { transform: translate(-50%, -50%) rotate( 7deg) translateY(-3px); }
     }
 
-    /* =========================
-       MOBILE RETROFIT (added)
-       ========================= */
-    :root{
-      --size-copepod: clamp(140px, 26vmin, 240px);
-      --size-prey:    clamp(18px, 5vmin, 42px);
-      --size-poop:    clamp(34px, 10vmin, 70px);
-      --size-crab:    clamp(70px, 14vmin, 130px);
-    }
-
+    /* ===== Mobile controls UI ===== */
     .mobileControls{
       position: fixed;
       left: 12px;
       right: 12px;
-      bottom: 12px;
+      bottom: calc(12px + env(safe-area-inset-bottom));
       z-index: 60;
       display: none;
-      gap: 10px;
+      gap: 12px;
       align-items: end;
       justify-content: space-between;
       pointer-events: auto;
       user-select: none;
+      -webkit-user-select: none;
     }
 
     .mobileControls .panel{
@@ -747,6 +748,7 @@
       min-height: 56px;
       padding: 0;
       touch-action: none;
+      -webkit-touch-callout: none;
     }
     .mobileControls button:active{ background: rgba(255,255,255,0.18); }
 
@@ -764,23 +766,19 @@
       gap: 8px;
     }
     .actions button{
-      min-width: 92px;
+      min-width: 130px;
       padding: 0 12px;
     }
 
-    @media (max-width: 700px){
-      .hud{
-        top: calc(var(--surface-h) + 10px);
-        left: 10px;
-        right: 10px;
-        max-width: unset;
-        font-size: 13px;
-      }
-      .branding{ display: none; }
-    }
-
+    /* show on touch devices */
     @media (hover: none) and (pointer: coarse){
       .mobileControls{ display: flex; }
+      .hud{
+        font-size: 12px;
+        max-width: 92vw;
+      }
+      /* leave room for controls so they do not overlap text */
+      .overlay{ padding-bottom: 140px; }
     }
   </style>
 </head>
@@ -805,7 +803,6 @@
 
   <!-- Seaweed -->
   <div class="seaweed-layer" aria-hidden="true">
-    <!-- (unchanged seaweed SVGs) -->
     <svg class="weed w1" viewBox="0 0 120 260">
       <path d="M22,260 C10,210 45,190 28,150 C10,110 40,95 25,55 C12,25 28,10 35,0"
             fill="none" stroke="rgba(70,170,120,0.78)" stroke-width="10" stroke-linecap="round"/>
@@ -859,10 +856,13 @@
   <img id="fish" src="fish.png" alt="fish">
   <img id="dredger" src="dredger.png" alt="dredger">
 
+  <!-- slurf (procedural) -->
   <div id="slurf" aria-hidden="true"></div>
   <svg id="pipe" width="10" height="10" aria-hidden="true"></svg>
 
   <img id="copepod" src="copepod.png" alt="copepod">
+
+  <!-- Large outside copepod -->
   <img id="sufficientCopepod" src="copepod.png" alt="" aria-hidden="true">
 
   <!-- INTRO overlay -->
@@ -910,8 +910,8 @@
         <div class="title">How to proceed?</div>
         <ul>
           <li><b>Play mode:</b> swim with arrow keys, boost with shift, pause/continue with space.</li>
-          <li><b>Mobile:</b> use the on-screen D-pad, Boost, and Pause/Continue.</li>
-          <li><b>Read-only mode:</b> skip gameplay and read the story boxes only (press space / Pause button to advance).</li>
+          <li><b>Read-only mode:</b> skip gameplay and read the story boxes only (press space to advance).</li>
+          <li><b>Phone:</b> use the on-screen controls (D-pad + Boost + Pause).</li>
         </ul>
       </div>
 
@@ -924,7 +924,7 @@
     </div>
   </div>
 
-  <!-- overlays (unchanged content) -->
+  <!-- overlays -->
   <div class="overlay" id="overlaySufficient">
     <div class="card">
       <h2>You are eating just fine!</h2>
@@ -988,12 +988,98 @@
       </p>
 
       <div class="scheme" aria-label="Fecal pellet fate and nutrient recycling schematic">
-        <!-- (unchanged SVG scheme content; omitted here for brevity in the explanation, but KEEP YOUR ORIGINAL SVG) -->
-        <!-- IMPORTANT: paste your original <svg id="fecesScheme"> ... </svg> here exactly as you had it -->
-        <!-- START original SVG -->
-        <!-- NOTE: I am keeping it out of this response to avoid truncation risk.
-             In your file, DO NOT remove it. -->
-        <!-- END original SVG -->
+        <svg id="fecesScheme" viewBox="0 0 980 360" role="img" aria-label="Pellet fate schematic">
+          <defs>
+            <marker id="arrow" markerUnits="strokeWidth" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" fill="rgba(255,255,255,0.80)"></path>
+            </marker>
+            <filter id="iconShadow" x="-50%" y="-50%" width="200%" height="200%">
+              <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="rgba(0,0,0,0.35)"/>
+            </filter>
+          </defs>
+
+          <!-- Boxes -->
+          <g font-family="system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial" fill="rgba(255,255,255,0.92)">
+            <!-- Fecal pellets -->
+            <rect x="60" y="140" width="230" height="86" rx="16"
+              fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.18)"/>
+            <text x="175" y="172" text-anchor="middle" font-size="16">Fecal pellets</text>
+            <image class="scheme-poop" href="poop.png" x="158" y="180" width="34" height="34" filter="url(#iconShadow)"></image>
+
+            <!-- Zooplankton -->
+            <rect x="360" y="40" width="260" height="92" rx="16"
+              fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.18)"/>
+            <text x="490" y="74" text-anchor="middle" font-size="16">Zooplankton</text>
+            <image class="scheme-copepod" href="copepod.png" x="472" y="84" width="36" height="36" filter="url(#iconShadow)"></image>
+
+            <!-- Deposited fecal pellets -->
+            <rect x="360" y="238" width="260" height="100" rx="16"
+              fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.18)"/>
+            <text x="490" y="270" text-anchor="middle" font-size="15">Deposited fecal pellets</text>
+            <text x="490" y="292" text-anchor="middle" font-size="13" fill="rgba(255,255,255,0.80)">Seafloor</text>
+
+            <!-- Down-arrow + pellet inside the deposited box (left side) -->
+            <line x1="412" y1="298" x2="412" y2="318"
+              stroke="rgba(255,255,255,0.80)" stroke-width="3" marker-end="url(#arrow)"/>
+            <image class="scheme-poop" href="poop.png" x="424" y="300" width="28" height="28" filter="url(#iconShadow)"></image>
+
+            <!-- Phytoplankton -->
+            <rect x="700" y="20" width="240" height="92" rx="16"
+              fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.18)"/>
+            <text x="820" y="54" text-anchor="middle" font-size="16">Phytoplankton</text>
+            <image class="scheme-prey" href="prey.png" x="803" y="64" width="34" height="34" filter="url(#iconShadow)"></image>
+
+            <!-- Inorganic nutrients -->
+            <rect x="700" y="138" width="240" height="92" rx="16"
+              fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.18)"/>
+            <text x="820" y="170" text-anchor="middle" font-size="16">Inorganic nutrients</text>
+            <g>
+              <circle cx="802" cy="200" r="14" fill="rgba(255,255,255,0.10)" stroke="rgba(255,255,255,0.22)"></circle>
+              <text x="802" y="205" text-anchor="middle" font-size="14" font-weight="800">N</text>
+              <circle cx="838" cy="200" r="14" fill="rgba(255,255,255,0.10)" stroke="rgba(255,255,255,0.22)"></circle>
+              <text x="838" y="205" text-anchor="middle" font-size="14" font-weight="800">P</text>
+            </g>
+
+            <!-- Benthos -->
+            <rect x="700" y="248" width="240" height="92" rx="16"
+              fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.18)"/>
+            <text x="820" y="280" text-anchor="middle" font-size="16">Benthos</text>
+            <image class="scheme-crab" href="crab.png" x="803" y="290" width="36" height="36" filter="url(#iconShadow)"></image>
+          </g>
+
+          <!-- Arrows + labels -->
+          <g font-family="system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial" font-size="13" fill="rgba(255,255,255,0.85)">
+            <!-- ingestion pellets -> zooplankton -->
+            <line x1="290" y1="155" x2="360" y2="110"
+              stroke="rgba(255,255,255,0.78)" stroke-width="3" marker-end="url(#arrow)"/>
+            <text x="325" y="118" text-anchor="middle">ingestion</text>
+
+            <!-- sinking pellets -> deposited -->
+            <line x1="175" y1="226" x2="360" y2="260"
+              stroke="rgba(255,255,255,0.78)" stroke-width="3" marker-end="url(#arrow)"/>
+            <text x="255" y="252" text-anchor="middle">sinking</text>
+
+            <!-- remineralisation deposited -> inorganic nutrients -->
+            <line x1="620" y1="285" x2="700" y2="190"
+              stroke="rgba(255,255,255,0.78)" stroke-width="3" marker-end="url(#arrow)"/>
+            <text x="665" y="245" text-anchor="middle">remineralization</text>
+
+            <!-- photosynthesis nutrients -> phytoplankton -->
+            <line x1="820" y1="138" x2="820" y2="112"
+              stroke="rgba(255,255,255,0.78)" stroke-width="4" marker-end="url(#arrow)"/>
+            <text x="860" y="128" text-anchor="start">photosynthesis</text>
+
+            <!-- ingestion deposited -> benthos -->
+            <line x1="620" y1="304" x2="700" y2="304"
+              stroke="rgba(255,255,255,0.78)" stroke-width="3" marker-end="url(#arrow)"/>
+            <text x="660" y="296" text-anchor="middle">ingestion</text>
+
+            <!-- remineralization pellets -> inorganic nutrients (long arrow) -->
+            <line x1="290" y1="183" x2="700" y2="183"
+              stroke="rgba(255,255,255,0.62)" stroke-width="3" marker-end="url(#arrow)"/>
+            <text x="495" y="172" text-anchor="middle">remineralization</text>
+          </g>
+        </svg>
       </div>
 
       <p class="hint"><b>Press space</b> to continue.</p>
@@ -1010,8 +1096,9 @@
         The higher an organism is in this food chain, the higher the trophic level of this organism. A change at the basis of this food chain (plankton) can thus have far reaching consequences!
       </p>
 
-      <img src="food_chain.png" alt="Food chain diagram"
-           style="width:min(600px, 86vw); height:auto; display:block; margin:0 auto;">
+      <img src="food_chain.png"
+        alt="Food chain diagram"
+        style="width:600px; height:auto; display:block; margin:0 auto; max-width:100%;">
 
       <p class="hint"><b>Press space</b> to continue.</p>
     </div>
@@ -1032,6 +1119,7 @@
     </div>
   </div>
 
+  <!-- Pause overlay with ORELSE -->
   <div class="overlay" id="overlayORELSE">
     <div class="card">
       <div class="orelse">
@@ -1051,21 +1139,21 @@
     </div>
   </div>
 
-  <!-- MOBILE CONTROLS (added) -->
+  <!-- MOBILE CONTROLS (touch) -->
   <div class="mobileControls" aria-label="Mobile controls">
     <div class="panel">
       <div class="dpad" aria-label="Move">
-        <button class="empty" type="button"></button>
+        <button class="empty" type="button" aria-hidden="true"></button>
         <button id="mUp" type="button" aria-label="Up">▲</button>
-        <button class="empty" type="button"></button>
+        <button class="empty" type="button" aria-hidden="true"></button>
 
         <button id="mLeft" type="button" aria-label="Left">◀</button>
-        <button class="empty" type="button"></button>
+        <button class="empty" type="button" aria-hidden="true"></button>
         <button id="mRight" type="button" aria-label="Right">▶</button>
 
-        <button class="empty" type="button"></button>
+        <button class="empty" type="button" aria-hidden="true"></button>
         <button id="mDown" type="button" aria-label="Down">▼</button>
-        <button class="empty" type="button"></button>
+        <button class="empty" type="button" aria-hidden="true"></button>
       </div>
     </div>
 
@@ -1088,7 +1176,9 @@
     // ---------- Story thresholds ----------
     const SUFFICIENT_SCORE = 20;
     const TURBID_TARGET_SCORE = 20;
-    const END_SCORE = 10;
+    const END_SCORE = 10; // during turbid + turbulence
+
+    // Fish timing: appears 2 seconds after closing "You are eating just fine"
     const FISH_AFTER_SUFFICIENT_MS = 2000;
 
     // ---------- Parameters ----------
@@ -1205,7 +1295,7 @@
 
     const fecesSchemeSvg = document.getElementById("fecesScheme");
 
-    // ---------- Size helpers ----------
+    // ---------- Size helpers (for SVG icons in feces scheme) ----------
     function cssVarNumber(name, fallback){
       const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
       const n = Number(v);
@@ -1234,6 +1324,30 @@
     // ---------- State ----------
     const keys = new Set();
 
+    // ===== Mobile virtual keys (touch) =====
+    const vkeys = { left:false, right:false, up:false, down:false, boost:false };
+
+    function bindTouchHold(btnId, field){
+      const btn = document.getElementById(btnId);
+      if (!btn) return;
+
+      const on = (e) => { e.preventDefault(); vkeys[field] = true; };
+      const off = (e) => { e.preventDefault(); vkeys[field] = false; };
+
+      btn.addEventListener("touchstart", on, { passive: false });
+      btn.addEventListener("touchend", off, { passive: false });
+      btn.addEventListener("touchcancel", off, { passive: false });
+
+      btn.addEventListener("mousedown", (e)=>{ e.preventDefault(); vkeys[field] = true; });
+      addEventListener("mouseup", ()=>{ vkeys[field] = false; });
+    }
+
+    bindTouchHold("mLeft","left");
+    bindTouchHold("mRight","right");
+    bindTouchHold("mUp","up");
+    bindTouchHold("mDown","down");
+    bindTouchHold("mBoost","boost");
+
     let introPaused = true;
     let paused = false;
 
@@ -1253,11 +1367,13 @@
     let score = 0.0;
     let crabEaten = 0;
 
+    // Feces overlay: play-mode gating on FIRST pellet disappearance
     let firstDissolutionShown = false;
     let firstPelletTagged = false;
 
     let sufficientShownClear = false;
 
+    // Fish now triggered by timer (2s after closing sufficient), not by score
     let fishEventTriggered = false;
     let fishTimer = null;
 
@@ -1274,9 +1390,12 @@
     let copepodAlive = true;
     let dredgeTextTimer = null;
 
+    // Read-only mode (skip gameplay)
     let readOnlyMode = false;
     let readStep = 0;
 
+    // UPDATED read flow:
+    // "Zooplankton" box (sufficient) first, THEN feces box.
     const readFlow = [
       overlaySufficient,
       overlayDissolve,
@@ -1288,6 +1407,7 @@
       overlayORELSE
     ];
 
+    // dredger rendered dimensions
     let dredgerImgW = 0;
     let dredgerImgH = 0;
 
@@ -1430,6 +1550,7 @@
 
       score = 0.0;
       crabEaten = 0;
+
       updateHUD();
     }
 
@@ -1489,12 +1610,14 @@
         isFirstPellet: false
       });
 
+      // object pool
       if (alivePoop >= POOP_MAX){
         const oldest = poop.find(p => p.alive);
         if (oldest) {
           Object.assign(oldest, makeParams());
           oldest.alive = true;
 
+          // Tag first pellet once (first one that gets created)
           if (!firstPelletTagged){
             oldest.isFirstPellet = true;
             firstPelletTagged = true;
@@ -1514,6 +1637,7 @@
 
       const obj = { el, alive: true, ...makeParams() };
 
+      // Tag first pellet once (first one that gets created)
       if (!firstPelletTagged){
         obj.isFirstPellet = true;
         firstPelletTagged = true;
@@ -1547,6 +1671,7 @@
       q.alive = false;
       if (q.el && q.el.parentNode) q.el.parentNode.removeChild(q.el);
 
+      // show feces overlay ONLY when the FIRST fecal pellet disappears (decay OR crab ingestion).
       if (!readOnlyMode && !firstDissolutionShown && wasFirst){
         firstDissolutionShown = true;
         dissolvePaused = true;
@@ -1729,6 +1854,7 @@
 
       score = round1(score - SAND_PENALTY);
       updateHUD();
+
       maybeShowEnd();
 
       s.el.style.opacity = "0";
@@ -1789,6 +1915,7 @@
       sufficientCopepodEl.style.display = "block";
     }
 
+    // ---------- Dredger + scar + pipe + slurf ----------
     function setDredgerTransform(){
       dredgerEl.style.left = dredger.x + "px";
       dredgerEl.style.top  = dredger.y + "px";
@@ -1910,128 +2037,104 @@
       readOnlyShowStep(readStep);
     }
 
-    // ---------- Unified SPACE logic (added) ----------
-    function handleSpacePress(){
-      if (readOnlyMode) {
-        if (overlayORELSE.classList.contains("show") && readStep >= readFlow.length - 1) {
-          hide(overlayORELSE);
-          readStep = 0;
-          readOnlyShowStep(readStep);
-          return;
-        }
-        readStep += 1;
-        readOnlyShowStep(readStep);
-        return;
-      }
-
-      if (introPaused) {
-        introPaused = false;
-        hide(overlayIntro);
-        paused = false;
-        return;
-      }
-
-      if (orelsePaused) {
-        hideORELSE();
-        if (paused) paused = false;
-        return;
-      }
-
-      if (endPaused) {
-        endPaused = false;
-        hide(overlayEnd);
-        finalCompleted = true;
-
-        paused = true;
-        showORELSE();
-        return;
-      }
-      else if (turbulencePaused) {
-        turbulencePaused = false;
-        hide(overlayTurbulence);
-        resetHudCountsOnly();
-        turbulenceActive = true;
-      }
-      else if (dissolvePaused) {
-        dissolvePaused = false;
-        hide(overlayDissolve);
-      }
-      else if (dredgePaused) {
-        dredgePaused = false;
-        hide(overlayDredge);
-        if (dredgeExplained && !turbidPhase){
-          resetCopepodForTurbidPhase();
-        }
-      }
-      else if (fishPaused) {
-        fishPaused = false;
-        hide(overlayFish);
-        if (!dredgeStarted){
-          startDredging();
-        }
-      }
-      else if (sufficientTurbidPaused) {
-        sufficientTurbidPaused = false;
-        hide(overlaySufficientTurbid);
-        scheduleTurbulenceOverlay();
-      }
-      else if (sufficientPaused) {
-        sufficientPaused = false;
-        hide(overlaySufficient);
-        showSufficientCopepod(false);
-        scheduleFishAfterSufficient();
-      }
-      else {
-        paused = !paused;
-        if (paused) showORELSEIfManualPause();
-        else hideORELSE();
-      }
-    }
-
     // ---------- Input ----------
     addEventListener("keydown", (e) => {
       if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Shift"," "].includes(e.key)) e.preventDefault();
 
-      if (e.key === " ") handleSpacePress();
+      if (e.key === " ") {
+        // Read-only: SPACE advances boxes
+        if (readOnlyMode) {
+          if (overlayORELSE.classList.contains("show") && readStep >= readFlow.length - 1) {
+            hide(overlayORELSE);
+            readStep = 0;
+            readOnlyShowStep(readStep);
+            return;
+          }
+
+          readStep += 1;
+          readOnlyShowStep(readStep);
+          return;
+        }
+
+        // Play mode: intro gate
+        if (introPaused) {
+          introPaused = false;
+          hide(overlayIntro);
+          paused = false;
+          return;
+        }
+
+        if (orelsePaused) {
+          hideORELSE();
+          if (paused) paused = false;
+          return;
+        }
+
+        if (endPaused) {
+          endPaused = false;
+          hide(overlayEnd);
+          finalCompleted = true;
+
+          paused = true;
+          showORELSE();
+          return;
+        }
+        else if (turbulencePaused) {
+          turbulencePaused = false;
+          hide(overlayTurbulence);
+          resetHudCountsOnly();
+          turbulenceActive = true;
+        }
+        else if (dissolvePaused) {
+          dissolvePaused = false;
+          hide(overlayDissolve);
+        }
+        else if (dredgePaused) {
+          dredgePaused = false;
+          hide(overlayDredge);
+          if (dredgeExplained && !turbidPhase){
+            resetCopepodForTurbidPhase();
+          }
+        }
+        else if (fishPaused) {
+          fishPaused = false;
+          hide(overlayFish);
+          if (!dredgeStarted){
+            startDredging();
+          }
+        }
+        else if (sufficientTurbidPaused) {
+          sufficientTurbidPaused = false;
+          hide(overlaySufficientTurbid);
+          scheduleTurbulenceOverlay();
+        }
+        else if (sufficientPaused) {
+          sufficientPaused = false;
+          hide(overlaySufficient);
+          showSufficientCopepod(false);
+
+          scheduleFishAfterSufficient();
+        }
+        else {
+          paused = !paused;
+          if (paused) showORELSEIfManualPause();
+          else hideORELSE();
+        }
+      }
+
       keys.add(e.key);
     });
     addEventListener("keyup", (e) => keys.delete(e.key));
 
+    // Buttons: choose mode from intro
     btnPlay.addEventListener("click", () => {
       introPaused = false;
       hide(overlayIntro);
       paused = false;
     });
-    btnRead.addEventListener("click", () => startReadOnlyMode());
-
-    // ---------- Mobile button input (added) ----------
-    const vkeys = { left:false, right:false, up:false, down:false, boost:false };
-
-    function bindHold(btnId, keyName){
-      const btn = document.getElementById(btnId);
-      if (!btn) return;
-
-      const down = (e) => { e.preventDefault(); vkeys[keyName] = true; };
-      const up   = (e) => { e.preventDefault(); vkeys[keyName] = false; };
-
-      btn.addEventListener("pointerdown", down);
-      btn.addEventListener("pointerup", up);
-      btn.addEventListener("pointercancel", up);
-      btn.addEventListener("pointerleave", up);
-    }
-    bindHold("mLeft", "left");
-    bindHold("mRight","right");
-    bindHold("mUp",   "up");
-    bindHold("mDown", "down");
-    bindHold("mBoost","boost");
-
-    const mPause = document.getElementById("mPause");
-    if (mPause){
-      mPause.addEventListener("click", (e) => {
-        e.preventDefault();
-        handleSpacePress();
-      });
-    }
+    btnRead.addEventListener("click", () => {
+      startReadOnlyMode();
+    });
 
     // ---------- Main loop ----------
     let last = performance.now();
@@ -2046,23 +2149,20 @@
         player.t += dt;
         const { yMin, yMax } = waterBounds();
 
+        // Fish can activate once timer has triggered
         if (!turbidPhase) activateFish();
 
         if (copepodAlive){
           let ax = 0, ay = 0;
-
-          // keyboard OR touch d-pad
-          if (keys.has("ArrowLeft")  || vkeys.left)  ax -= 1;
-          if (keys.has("ArrowRight") || vkeys.right) ax += 1;
-          if (keys.has("ArrowUp")    || vkeys.up)    ay -= 1;
-          if (keys.has("ArrowDown")  || vkeys.down)  ay += 1;
+          if (keys.has("ArrowLeft"))  ax -= 1;
+          if (keys.has("ArrowRight")) ax += 1;
+          if (keys.has("ArrowUp"))    ay -= 1;
+          if (keys.has("ArrowDown"))  ay += 1;
 
           const mag = Math.hypot(ax, ay) || 1;
           ax /= mag; ay /= mag;
 
-          const boosting = keys.has("Shift") || vkeys.boost;
-          const speed = PLAYER_BASE_SPEED * (boosting ? PLAYER_BOOST_MULT : 1.0);
-
+          const speed = PLAYER_BASE_SPEED * (keys.has("Shift") ? PLAYER_BOOST_MULT : 1.0);
           player.vx = ax * speed;
           player.vy = ay * speed;
 
@@ -2098,8 +2198,11 @@
           const dy = p.y - player.y;
           const d = Math.hypot(dx, dy);
 
-          if (copepodAlive && d < ESCAPE_TRIGGER_DIST && p.escapeCooldown === 0){
-            const prob = 1 - Math.exp(-ESCAPE_PROB_PER_SEC * dt);
+          const escDist = ESCAPE_TRIGGER_DIST;
+          const escProb = ESCAPE_PROB_PER_SEC;
+
+          if (copepodAlive && d < escDist && p.escapeCooldown === 0){
+            const prob = 1 - Math.exp(-escProb * dt);
             if (Math.random() < prob){
               const ux = (d > 1e-6) ? (dx / d) : (Math.random() < 0.5 ? -1 : 1);
               const uy = (d > 1e-6) ? (dy / d) : rand(-0.4, 0.4);
@@ -2150,7 +2253,8 @@
 
         const floor = seafloorY();
         for (const q of poop){
-          if (!q.alive) continue;
+          if (!q.alive
+) continue;
 
           if (!q.settled){
             q.x += q.vx * dt;
@@ -2187,6 +2291,7 @@
             }
 
             if (t >= life){
+              // Do NOT show fecal overlay here anymore; it is shown immediately after intro
               removePellet(q);
               continue;
             }
@@ -2376,4 +2481,6 @@
   </script>
 </body>
 </html>
+
+
 
