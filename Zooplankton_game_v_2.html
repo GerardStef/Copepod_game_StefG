@@ -764,7 +764,7 @@
       <div>Prey present: <b id="count">0</b></div>
       <div>Pellets active: <b id="pelletCount">0</b></div>
       <div>Sand particles: <b id="sandCount">0</b></div>
-      <div>Crab eaten: <b id="crabEaten">0</b></div>
+      <div>feces ingested by the crab: <b id="crabEaten">0</b></div>
     </div>
   </div>
 
@@ -1138,7 +1138,7 @@
     const SAND_DECAY_MIN = 12;
     const SAND_DECAY_MAX = 26;
 
-    const SAND_PENALTY = 0.1;
+    const SAND_PENALTY = 0.2;
     const SAND_EAT_RADIUS = 40;
 
     // ---------- Turbulence ----------
@@ -1346,7 +1346,7 @@
     function dredgerY(){
       const h = dredgerImgH || dredgerEl.getBoundingClientRect().height || 220;
       const surfaceLinePx = surfaceHeightPx() - 12;
-      const WATERLINE_FRAC = 0.50;
+      const WATERLINE_FRAC = 0.54;
       return surfaceLinePx + h * (0.5 - WATERLINE_FRAC);
     }
 
